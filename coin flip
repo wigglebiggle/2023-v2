@@ -1,0 +1,33 @@
+use rand::Rng;
+
+fn main() {
+    println!("Welcome to the Coin Flipper!");
+
+    loop {
+        println!("Press ENTER to flip the coin (or type 'exit' to quit):");
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).expect("Failed to read input");
+
+        if input.trim().eq_ignore_ascii_case("exit") {
+            println!("Thank you for using the Coin Flipper. Goodbye!");
+            break;
+        }
+
+        let result = flip_coin();
+        println!("The coin landed on: {}", result);
+    }
+}
+
+fn flip_coin() -> CoinSide {
+    let mut rng = rand::thread_rng();
+    if rng.gen::<bool>() {
+        CoinSide::Heads
+    } else {
+        CoinSide::Tails
+    }
+}
+
+enum CoinSide {
+    Heads,
+    Tails,
+}
