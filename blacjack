@@ -1,0 +1,113 @@
+use std::io;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum Rank {
+    Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King, Ace,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum Suit {
+    Hearts, Diamonds, Clubs, Spades,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct Card {
+    rank: Rank,
+    suit: Suit,
+}
+
+#[derive(Debug)]
+struct Deck {
+    cards: Vec<Card>,
+}
+
+impl Deck {
+    fn new() -> Deck {
+        let mut cards = Vec::new();
+        for &suit in &[Suit::Hearts, Suit::Diamonds, Suit::Clubs, Suit::Spades] {
+            for &rank in &[
+                Rank::Two, Rank::Three, Rank::Four, Rank::Five, Rank::Six, Rank::Seven,
+                Rank::Eight, Rank::Nine, Rank::Ten, Rank::Jack, Rank::Queen, Rank::King, Rank::Ace,
+            ] {
+                cards.push(Card { rank, suit });
+            }
+        }
+        Deck { cards }
+    }
+
+    fn shuffle(&mut self) {
+        use rand::seq::SliceRandom;
+        self.cards.shuffle(&mut rand::thread_rng());
+    }
+
+    fn deal(&mut self) -> Option<Card> {
+        self.cards.pop()
+    }
+}
+
+fn card_value(card: &Card) -> u8 {
+    match card.rank {
+        Rank::Two | Rank::Three | Rank::Four | Rank::Five | Rank::Six | Rank::Seven | Rank::Eight | Rank::Nine => {
+            card.rank as u8
+        }
+        Rank::Ten | Rank::Jack | Rank::Queen | Rank::King => 10,
+        Rank::Ace => 11,
+    }
+}
+
+fn main() {
+    println!("Welcome to Rust Blackjack!");
+
+    let mut deck = Deck::new();
+    deck.shuffle();
+
+    let mut player_hand = Vec::new();
+    let mut dealer_hand = Vec::new();
+
+    // Initial deal
+    player_hand.push(deck.deal().unwrap());
+    dealer_hand.push(deck.deal().unwrap());
+    player_hand.push(deck.deal().unwrap());
+    dealer_hand.push(deck.deal().unwrap());
+
+    // Player's turn
+    println!("Your hand: {:?}", player_hand);
+    let mut player_score = player_hand.iter().map(|card| card_value(card)).sum::<u8>();
+    while player_score < 21 {
+        println!("Do you want to hit or stand? (h/s)");
+        let mut choice = String::new();
+        io::stdin().read_line(&mut choice).expect("Failed to read line");
+        if choice.trim() == "h" {
+            let new_card = deck.deal().unwrap();
+            println!("You drew: {:?}", new_card);
+            player_hand.push(new_card);
+            player_score = player_hand.iter().map(|card| card_value(card)).sum();
+            println!("Your hand: {:?}", player_hand);
+        } else if choice.trim() == "s" {
+            break;
+        }
+    }
+
+    // Dealer's turn
+    let mut dealer_score = dealer_hand.iter().map(|card| card_value(card)).sum::<u8>();
+    while dealer_score < 17 {
+        let new_card = deck.deal().unwrap();
+        dealer_hand.push(new_card);
+        dealer_score = dealer_hand.iter().map(|card| card_value(card)).sum();
+    }
+
+    println!("Your final hand: {:?}", player_hand);
+    println!("Dealer's final hand: {:?}", dealer_hand);
+
+    if player_score > 21 {
+        println!("You bust! Dealer wins.");
+    } else if dealer_score > 21 {
+        println!("Dealer busts! You win.");
+    } else if player_score > dealer_score {
+        println!("You win!");
+    } else if player_score < dealer_score {
+        println!("Dealer wins.");
+    } else {
+        println!("It's a tie!");
+    }
+}
